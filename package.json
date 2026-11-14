@@ -1,0 +1,1 @@
+{"name":"admision-evaluaciones","private":true,"packageManager":"pnpm@11.22.0","scripts":{"dev:web":"corepack pnpm --filter @admision/web dev","dev:api":"corepack pnpm --filter @admision/api dev","build":"corepack pnpm --filter @admision/web build","test":"corepack pnpm --filter @admision/api test"}}

@@ -1,0 +1,1 @@
+{"name":"@admision/web","private":true,"type":"module","scripts":{"dev":"astro dev --host 127.0.0.1 --port 4350","build":"astro build"},"dependencies":{"@tailwindcss/vite":"4.1.18","astro":"7.2.1","tailwindcss":"4.1.18"}}
