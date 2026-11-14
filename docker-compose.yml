@@ -18,6 +18,10 @@ services:
       INTRANET_SERVICE_KEY: ${INTRANET_SERVICE_KEY:-}
     volumes:
       - ./data:/data
+    networks:
+      default:
+        aliases:
+          - admision-api
     # La API no se publica en el host: solo la alcanza el servicio web.
     expose:
       - "4351"

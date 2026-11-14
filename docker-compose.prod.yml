@@ -14,7 +14,8 @@ services:
       HOST: 0.0.0.0
       PORT: "4351"
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-api:4351}
-      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost}
+      # Obligatorio: origen publico exacto (https://dominio, sin barra final).
+      WEB_ORIGIN: ${WEB_ORIGIN:?Define WEB_ORIGIN con el dominio publico, p. ej. https://epgsoporte.online}
       DATA_DIR: /data
       FUENTE_PATH: /data/fuentes-excel/grupos.json
       SIGAE_API_URL: ${SIGAE_API_URL:-https://api.postgradounap.edu.pe/}
@@ -23,6 +24,11 @@ services:
       INTRANET_SERVICE_KEY: ${INTRANET_SERVICE_KEY:-}
     volumes:
       - datos:/data
+    networks:
+      default:
+        # Alias unico para no chocar con otros servicios `api` en dokploy-network.
+        aliases:
+          - admision-api
     # La API no se publica: solo la alcanza `web`.
     expose:
       - "4351"
