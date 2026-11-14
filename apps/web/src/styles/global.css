@@ -1,4 +1,48 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&family=Newsreader:wght@300;400&display=swap');
 @import "tailwindcss";
-@theme { --font-sans: Inter, ui-sans-serif, system-ui, sans-serif; }
-@layer base { body { @apply bg-slate-50 text-slate-800 font-sans antialiased; } button, input, select { @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700; } }
+
+/* Tokens del sistema "warm cream editorial" (ver DESIGN.md). */
+@theme {
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-serif: Newsreader, "Source Serif Pro", Georgia, serif;
+
+  /* Colores institucionales (azul marino de SIGAE) */
+  --color-brand: #001b3d;
+  --color-brand-dark: #001529;
+  --color-brand-tint: #e8edf5;
+
+  --color-cream: #faf9f6;
+  --color-linen: #f1eee9;
+  --color-stone: #d3cec6;
+  --color-hairline: #dedbd6;
+  --color-ink: #111111;
+  --color-iron: #414141;
+  --color-graphite: #585858;
+  --color-smoke: #888888;
+  --color-silver: #b8b8b8;
+
+  --radius-xs: 4px;
+  --radius-sm: 4px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
+  --radius-full: 4px;
+
+  --tracking-label: 1.2px;
+}
+
+@layer base {
+  html { font-feature-settings: "ss01" on, "tnum" on; }
+  body { @apply bg-cream text-ink font-sans font-light antialiased; }
+  h1, h2, h3 { @apply font-light; }
+  button, input, select, a { @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand; }
+}
+
+/* Etiqueta mono en mayúsculas: el "pie de foto" del sistema. */
+@utility label { @apply font-mono text-xs font-normal uppercase tracking-[1.2px] text-graphite; }
+@utility btn { @apply inline-flex h-12 items-center justify-center gap-2 rounded-xs px-4 text-sm font-normal transition-colors disabled:cursor-not-allowed disabled:opacity-40; }
+@utility btn-primary { @apply btn bg-brand text-white hover:bg-[#12315c]; }
+@utility btn-outline { @apply btn border border-brand bg-white text-brand hover:bg-brand-tint; }
+@utility field { @apply h-12 w-full rounded-xs border border-hairline bg-white px-4 text-base font-normal text-ink placeholder:text-smoke; }

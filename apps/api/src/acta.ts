@@ -1,0 +1,25 @@
+import { readFileSync } from 'node:fs';
+
+const logo = (n: number): string => `data:image/png;base64,${readFileSync(new URL(`../assets/logo-${n}.png`, import.meta.url)).toString('base64')}`;
+const esc = (s: unknown): string => String(s ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+
+interface AsignacionActa { postulante: string; dni?: string | null; evaluador?: string }
+interface ContenidoActa {
+  evento: { tipo: string; fecha: string; aula: string | number; capacidad: string | number };
+  asignaciones: AsignacionActa[];
+  convocatoria?: string;
+}
+
+export function renderActa(acta: { id: number; contenido: string }): string {
+  const { evento, asignaciones, convocatoria } = JSON.parse(acta.contenido) as ContenidoActa;
+  const pages: AsignacionActa[][] = [];
+  for (let i = 0; i < asignaciones.length; i += 25) pages.push(asignaciones.slice(i, i + 25));
+  if (pages.length === 1 && asignaciones.length > 20) pages.push([]);
+  const date = evento.fecha.slice(0, 10).split('-').reverse().join('/');
+  const rows = (items: AsignacionActa[], start: number) => items.map((p, i) => `<tr><td>${start + i + 1}</td><td>${esc(p.postulante)}</td><td>${esc(p.dni || '')}</td><td></td><td></td></tr>`).join('');
+  const table = (items: AsignacionActa[], start: number) => `<table><thead><tr><th>N°</th><th>Apellidos y nombres</th><th>Documento</th><th>Nota en números</th><th>Nota en letras</th></tr></thead><tbody>${rows(items, start)}</tbody></table>`;
+  const single = [...new Set(asignaciones.map(a => a.evaluador).filter(Boolean))];
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Acta de ${esc(evento.tipo)}</title><style>
+    @page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;background:#e5e7eb;font-family:Arial,sans-serif;color:#000}.sheet{position:relative;width:210mm;height:297mm;margin:10mm auto;background:#fff;padding:10mm 17mm 16mm;page-break-after:always;font-size:9pt}.sheet:last-child{page-break-after:auto}.logos{height:20mm;display:flex;align-items:center;justify-content:space-between}.logos img:first-child{width:58mm}.logos img:last-child{width:40mm}h1{text-align:center;font-size:15pt;margin:2mm 0}h2{text-align:center;font-size:10pt;margin:0 0 5mm}.stamp{text-align:center;font-size:8pt;font-weight:bold;color:#a11;margin:1mm}.intro{display:grid;grid-template-columns:1fr 52mm;gap:5mm;margin:4mm 0 6mm}.text{line-height:1.35;text-align:justify}.teacher{border-bottom:1px solid;margin:0 0 3mm;min-height:9mm}.meta{border:1px solid;border-radius:2px;padding:3mm;font-size:9pt;line-height:2}.meta b{display:inline-block;width:21mm}table{width:100%;border-collapse:collapse;font-size:8pt;table-layout:fixed}th,td{border:1px solid;padding:1mm;height:6mm}th:nth-child(1),td:nth-child(1){width:5%;text-align:center}th:nth-child(2){width:41%}th:nth-child(3){width:21%}th:nth-child(4),th:nth-child(5){width:16.5%}td:nth-child(3){text-align:center}.summary{margin:4mm 0 0 auto;width:48mm;border:1px solid;font-weight:bold;font-size:9pt}.summary div{padding:1mm;border-bottom:1px solid}.summary div:last-child{border:0}.signatures{position:absolute;bottom:18mm;left:17mm;right:17mm;display:flex;justify-content:space-between;text-align:center;font-size:8pt}.signature{border-top:1px solid;width:60mm;padding-top:1mm}.foot{position:absolute;bottom:7mm;left:17mm;right:17mm;display:flex;justify-content:space-between;font-style:italic;font-size:7pt}@media print{body{background:white}.sheet{margin:0}}
+    </style></head><body>${pages.map((items, i) => `<article class="sheet">${i === 0 ? `<div class="logos"><img src="${logo(0)}" alt="UNAP Escuela de Postgrado"><img src="${logo(1)}" alt="Universidad licenciada"></div><h1>ACTA DE ${esc(evento.tipo.toUpperCase())}</h1><h2>CONVOCATORIA DE ADMISIÓN ${esc(convocatoria || 'POR DEFINIR')}</h2><div class="intro"><div class="text"><div class="teacher">Docente responsable: ${single.length === 1 ? esc(single[0]) : '____________________________'}</div>Esta acta debe ser llenada cuidadosamente por el docente responsable, consignando los datos del postulante, la nota obtenida en la escala de 0 a 100. Finalmente, se debe completar el resumen con los totales correspondientes y firmar el acta como validación oficial del proceso de evaluación.</div><div class="meta"><div><b>Ficha:</b> ${String(acta.id).padStart(3, '0')}</div><div><b>Aula:</b> ${esc(evento.aula)}</div><div><b>Capacidad:</b> ${esc(evento.capacidad)}</div><div><b>Fecha:</b> ${esc(date)}</div></div></div>` : ''}${table(items, i * 25)}${i === pages.length - 1 ? `<div class="summary"><div>N° Evaluados:</div><div>N° Asistentes:</div><div>N° Inasistentes:</div></div><div class="signatures"><div class="signature">Firma del docente responsable<br>DNI:...........................</div><div class="signature">Firma del presidente de la comisión<br>DNI:...........................</div></div>` : ''}<footer class="foot"><span>ESCUELA DE POSTGRADO DE LA UNAP</span><span>Página ${i + 1}</span></footer></article>`).join('')}</body></html>`;
+}

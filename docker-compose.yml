@@ -1,0 +1,45 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      HOST: 0.0.0.0
+      ALLOWED_HOSTS: api:4351
+      WEB_ORIGIN: http://127.0.0.1:4350,http://localhost:4350
+      FUENTE_PATH: /data/fuentes-excel/grupos.json
+      INTRANET_URL: ${INTRANET_URL:-}
+      INTRANET_SERVICE_KEY: ${INTRANET_SERVICE_KEY:-}
+    volumes:
+      - ./data:/data
+    # La API no se publica en el host: solo la alcanza el servicio web.
+    expose:
+      - "4351"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "--header=Host: api:4351", "http://127.0.0.1:4351/api/salud"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    depends_on:
+      api:
+        condition: service_started
+    # Solo accesible desde esta computadora.
+    ports:
+      - "127.0.0.1:4350:80"
+    restart: unless-stopped
+
+  # docker compose run --rm importar  → regenera data/fuentes-excel desde data/entrada/*.xlsx
+  importar:
+    profiles: ["tools"]
+    build:
+      context: .
+      dockerfile: tools/Dockerfile
+    volumes:
+      - ./data:/data

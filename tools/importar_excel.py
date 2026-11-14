@@ -2,11 +2,12 @@
 import datetime
 import hashlib
 import json
+import os
 from pathlib import Path
 import openpyxl
 
 ROOT = Path(__file__).resolve().parents[1]
-DOWNLOADS = Path.home() / 'Downloads'
+DOWNLOADS = Path(os.environ.get('EXCEL_DIR') or Path.home() / 'Downloads')
 FILES = [('entrevistas', 'Entrevistas_Admision_2026-II.xlsx'), ('examen', 'Examen_aulas_Admision_2026-II.xlsx')]
 
 def value(v):
@@ -40,7 +41,7 @@ def read(path, kind):
     return {'archivo':path.name, 'sha256':hashlib.sha256(path.read_bytes()).hexdigest(), 'hojas':hojas}, groups
 
 def main():
-    directory = ROOT / 'data' / 'fuentes-excel'
+    directory = Path(os.environ.get('DATA_DIR') or ROOT / 'data') / 'fuentes-excel'
     directory.mkdir(parents=True, exist_ok=True)
     fuentes, grupos = [], []
     for kind, name in FILES:
@@ -48,7 +49,7 @@ def main():
         fuentes.append(source)
         grupos.extend(entries)
     (directory / 'originales.json').write_text(json.dumps({'fuentes':fuentes}, ensure_ascii=False, indent=2),encoding='utf-8')
-    (directory / 'grupos.json').write_text(json.dumps({'corte':'2026-11-13T13:12:00-05:00','grupos':grupos}, ensure_ascii=False, indent=2),encoding='utf-8')
+    (directory / 'grupos.json').write_text(json.dumps({'corte':'2026-11-13T16:56:00-05:00','grupos':grupos}, ensure_ascii=False, indent=2),encoding='utf-8')
     for kind, _ in FILES:
         current=[g for g in grupos if g['tipo']==kind]
         print(f'{kind}: {len(current)} grupos; {sum(len(g["postulantes"]) for g in current)} registros')

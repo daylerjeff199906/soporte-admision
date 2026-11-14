@@ -1,1 +1,21 @@
-{"name":"@admision/web","private":true,"type":"module","scripts":{"dev":"astro dev --host 127.0.0.1 --port 4350","build":"astro build"},"dependencies":{"@tailwindcss/vite":"4.1.18","astro":"7.2.1","tailwindcss":"4.1.18"}}
+{
+  "name": "@admision/web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --host 127.0.0.1 --port 4350",
+    "build": "astro build",
+    "typecheck": "astro check"
+  },
+  "dependencies": {
+    "@lucide/astro": "^1.72.0",
+    "@tailwindcss/vite": "4.1.18",
+    "astro": "7.2.1",
+    "lucide": "^1.72.0",
+    "tailwindcss": "4.1.18"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.0",
+    "typescript": "^5.9.0"
+  }
+}

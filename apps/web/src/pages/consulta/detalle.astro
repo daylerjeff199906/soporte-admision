@@ -1,0 +1,67 @@
+---
+import { X } from '@lucide/astro';
+import Base from '../../layouts/Base.astro';
+import Cabecera from '../../components/Cabecera.astro';
+import Pie from '../../components/Pie.astro';
+import AccionesDetalle from '../../components/AccionesDetalle.astro';
+import CargandoPagina from '../../components/CargandoPagina.astro';
+---
+<Base title="Tu programación · EPG UNAP">
+  <Cabecera />
+
+  <main class="bg-linen">
+    <div class="mx-auto max-w-[1200px] px-6 py-12 md:px-12 md:py-16">
+      <div class="flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <p class="label">Resultado de tu consulta</p>
+          <h1 class="mt-3 text-[40px] leading-[1.1] tracking-[-1.2px] md:text-[54px] md:tracking-[-1.62px]">Tu programación</h1>
+        </div>
+        <AccionesDetalle />
+      </div>
+
+      <div id="resultado" class="mt-10 flex flex-col gap-6"></div>
+
+      <AccionesDetalle class="mt-10" />
+    </div>
+  </main>
+
+  <Pie />
+  <CargandoPagina />
+
+  <!-- Modal: consultar otro DNI sin salir de la página -->
+  <dialog id="modal-dni" aria-labelledby="modal-titulo"
+    class="m-auto w-[min(92vw,480px)] rounded-xs border border-hairline bg-white p-0 text-ink backdrop:bg-brand/60">
+    <form id="form-modal" class="relative p-6 md:p-8" novalidate>
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="label">Nueva consulta</p>
+          <h2 id="modal-titulo" class="mt-2 text-2xl leading-[1.25] tracking-[-0.48px]">Consultar otro DNI</h2>
+        </div>
+        <button type="button" data-cerrar aria-label="Cerrar" class="-mr-2 -mt-2 inline-flex size-10 items-center justify-center rounded-xs text-graphite hover:bg-linen">
+          <X class="size-5" aria-hidden="true" />
+        </button>
+      </div>
+
+      <label for="dni-modal" class="label mt-6 block">Documento de identidad</label>
+      <input id="dni-modal" name="dni" inputmode="numeric" pattern="[0-9]{8}" minlength="8" maxlength="8"
+        autocomplete="off" placeholder="8 dígitos de tu DNI" required class="field mt-3" />
+      <p id="hint-modal" role="status" aria-live="polite" class="mt-3 min-h-5 text-sm text-graphite"></p>
+
+      <div class="mt-6 flex flex-wrap justify-end gap-2">
+        <button type="button" data-cerrar class="btn-outline">Cancelar</button>
+        <button type="submit" id="submit-modal" class="btn-primary">Consultar programación</button>
+      </div>
+
+      <!-- Carga: capa absoluta sobre el contenido del modal -->
+      <div id="cargando-modal" role="alert" aria-label="Consultando"
+        class="absolute inset-0 hidden flex-col items-center justify-center gap-4 bg-white/85 text-brand backdrop-blur-[2px]">
+        <div id="cargando-modal-puntos"></div>
+        <p class="label text-brand">Consultando</p>
+      </div>
+    </form>
+  </dialog>
+</Base>
+
+<script>
+  import '../../scripts/detalle.ts';
+</script>

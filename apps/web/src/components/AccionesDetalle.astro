@@ -1,0 +1,9 @@
+---
+import { ArrowLeft, Search } from '@lucide/astro';
+interface Props { class?: string }
+const { class: clase = '' } = Astro.props;
+---
+<div class:list={['flex flex-wrap gap-2', clase]}>
+  <button type="button" data-volver class="btn-outline"><ArrowLeft class="size-4" aria-hidden="true" />Volver</button>
+  <button type="button" data-otro class="btn-primary"><Search class="size-4" aria-hidden="true" />Consultar otro DNI</button>
+</div>

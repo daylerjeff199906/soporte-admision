@@ -1,27 +1,111 @@
 ---
-import '../styles/global.css';
+import { ExternalLink } from '@lucide/astro';
+import Base from '../layouts/Base.astro';
 ---
-<!doctype html><html lang="es"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/><title>Programación de admisión · EPG UNAP</title></head>
-<body class="min-h-screen"><header class="border-b border-slate-200 bg-[#102a4a] text-white"><div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4"><a href="/" class="font-extrabold tracking-tight text-white">EPG <span class="text-amber-300">UNAP</span><span class="ml-3 border-l border-white/20 pl-3 text-sm font-medium text-slate-200">Admisión</span></a><a href="/consulta/" class="rounded-md border border-white/30 px-4 py-2 text-sm font-semibold hover:bg-white/10">Consulta del postulante ↗</a></div></header>
-<main class="mx-auto max-w-7xl px-5 py-8 md:py-10"><div class="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p class="mb-2 text-xs font-bold uppercase tracking-[.13em] text-blue-700">Proceso de admisión</p><h1 class="text-2xl font-bold tracking-tight text-slate-950 md:text-3xl">Evaluaciones y entrevistas</h1><p class="mt-2 text-sm text-slate-500">Revisa la programación y las listas del proceso 2026-II.</p></div><span class="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600">Corte: 13 nov 2026 · 13:12</span></div>
-<div id="alert" role="status" aria-live="polite" class="hidden mb-5 rounded-lg border px-4 py-3 text-sm"></div>
-<section id="login" class="mx-auto mt-14 max-w-md rounded-xl border border-slate-200 bg-white p-7 shadow-sm"><div class="mb-5 flex size-11 items-center justify-center rounded-xl bg-blue-50 text-xl text-blue-800">🔒</div><h2 class="text-xl font-bold text-slate-900">Acceso a programación</h2><p class="mt-2 text-sm leading-6 text-slate-600">Ingresa la clave local para consultar las listas y generar las fichas.</p><form id="login-form" class="mt-5 space-y-4"><label class="block text-sm font-semibold">Clave local<input name="clave" type="password" required autocomplete="current-password" class="mt-2 block h-11 w-full rounded-lg border border-slate-300 px-3 font-normal" /></label><button class="h-11 w-full rounded-lg bg-blue-800 px-4 text-sm font-semibold text-white hover:bg-blue-900">Ingresar</button></form><p class="mt-4 text-xs leading-5 text-slate-500">La clave de esta computadora está en <code>data/acceso-local.txt</code>.</p></section>
-<div id="dashboard" class="hidden"><div class="mb-5 grid gap-3 sm:grid-cols-3"><div class="rounded-xl border border-slate-200 bg-white px-5 py-4"><p class="text-sm text-slate-500">Postulantes en examen</p><p id="exam-count" class="mt-1 text-2xl font-bold text-slate-950">—</p></div><div class="rounded-xl border border-slate-200 bg-white px-5 py-4"><p class="text-sm text-slate-500">Postulantes en entrevista</p><p id="interview-count" class="mt-1 text-2xl font-bold text-slate-950">—</p></div><div class="rounded-xl border border-slate-200 bg-white px-5 py-4"><p class="text-sm text-slate-500">Grupos programados</p><p id="group-count" class="mt-1 text-2xl font-bold text-slate-950">—</p></div></div>
-<div class="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><strong>Fuente: Excel.</strong> Es una copia del corte, no una consulta en tiempo real a SIGAE. Las horas y los docentes no se completan si no figuran en la fuente.</div>
-<section class="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5"><div><h2 class="font-bold text-slate-950">Aulas institucionales</h2><p id="room-status" class="mt-1 text-sm text-slate-500">Sincroniza el catálogo de Intranet vinculado a SIGAE.</p><p class="mt-1 text-xs text-slate-500">La disponibilidad real requiere consultar las reservas institucionales.</p></div><button id="sync" type="button" class="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Sincronizar aulas</button></section>
-<section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"><div class="border-b border-slate-200 p-5"><div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-lg font-bold text-slate-950">Programación por grupo</h2><p class="mt-1 text-sm text-slate-500">Selecciona un grupo para ver su lista y generar el acta.</p></div><span id="result-count" class="text-sm text-slate-500"></span></div><div class="mt-5 grid gap-3 md:grid-cols-[1fr_200px]"><label class="sr-only" for="search">Buscar programa, aula o grupo</label><input id="search" type="search" placeholder="Buscar programa, aula o grupo" class="h-11 rounded-lg border border-slate-300 px-3 text-sm"/><label class="sr-only" for="type">Tipo de actividad</label><select id="type" class="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm"><option value="">Todas las actividades</option><option value="examen">Examen</option><option value="entrevistas">Entrevista</option></select></div></div><div id="groups" class="divide-y divide-slate-100"></div></section>
-<section id="detail" class="hidden mt-5 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"><div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5"><div><p class="text-xs font-bold uppercase tracking-wider text-blue-700">Lista de postulantes</p><h2 id="detail-title" class="mt-1 text-lg font-bold text-slate-950"></h2><p id="detail-meta" class="mt-1 text-sm text-slate-500"></p></div><a id="acta" target="_blank" rel="noopener" class="rounded-lg bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-900">Abrir acta de prueba ↗</a></div><form id="transfer" class="border-b border-slate-200 bg-slate-50 px-5 py-4"><div class="flex flex-wrap items-end gap-3"><label class="min-w-56 flex-1 text-sm font-semibold">Trasladar seleccionados a<select id="destination" required class="mt-1 block h-11 w-full rounded-lg border border-slate-300 bg-white px-3 font-normal"></select></label><button id="transfer-button" class="h-11 rounded-lg bg-slate-800 px-4 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-40">Guardar asignación</button></div><p class="mt-2 text-xs text-slate-500">Cambios locales para el mismo programa y actividad; verifica manualmente el aforo y horario. No modifican SIGAE ni el Excel.</p></form><div class="overflow-x-auto"><table class="w-full min-w-[540px] text-left text-sm"><thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th class="px-5 py-3"><input id="select-all" type="checkbox" aria-label="Seleccionar todos" /></th><th class="px-5 py-3">N°</th><th class="px-5 py-3">Apellidos y nombres</th><th class="px-5 py-3">Documento</th></tr></thead><tbody id="people" class="divide-y divide-slate-100"></tbody></table></div></section></div></main></body></html>
+<Base title="Programación de admisión · EPG UNAP">
+  <header class="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-4 px-6 py-6 md:px-12">
+    <a href="/" class="text-base font-normal tracking-tight">EPG UNAP<span class="ml-3 border-l border-hairline pl-3 text-sm font-light text-graphite">Admisión</span></a>
+    <a href="/consulta/" class="btn-outline h-10">Consulta del postulante<ExternalLink class="size-4" aria-hidden="true" /></a>
+  </header>
+
+  <main class="mx-auto max-w-[1200px] px-6 pb-24 pt-8 md:px-12">
+    <div class="mb-12 flex flex-wrap items-end justify-between gap-6">
+      <div>
+        <p class="label">Proceso de admisión 2026-II</p>
+        <h1 class="mt-3 text-[40px] leading-[1.1] tracking-[-1.2px] md:text-[54px] md:tracking-[-1.62px]">Evaluaciones y entrevistas</h1>
+        <p class="mt-4 max-w-md font-serif text-base leading-[1.4] text-iron">Revisa la programación, las listas y traslada postulantes entre grupos.</p>
+      </div>
+      <span class="label border border-hairline bg-white px-3 py-2">Corte · 13 nov 2026 · 16:56</span>
+    </div>
+
+    <div id="alert" role="status" aria-live="polite" class="mb-6 hidden rounded-xs border px-4 py-3 text-sm"></div>
+
+    <section id="login" class="max-w-md rounded-xs border border-hairline bg-white p-8">
+      <p class="label">Acceso local</p>
+      <h2 class="mt-3 text-2xl tracking-[-0.48px]">Acceso a programación</h2>
+      <p class="mt-3 text-sm leading-6 text-iron">Ingresa la clave local para consultar las listas y generar las fichas.</p>
+      <form id="login-form" class="mt-6 space-y-4">
+        <label class="label block">Clave local
+          <input name="clave" type="password" required autocomplete="current-password" class="field mt-2 normal-case tracking-normal" />
+        </label>
+        <button class="btn-primary w-full">Ingresar</button>
+      </form>
+      <p class="mt-4 text-xs leading-5 text-graphite">La clave está en <code class="font-mono">data/acceso-local.txt</code>.</p>
+    </section>
+
+    <div id="dashboard" class="hidden">
+      <dl class="grid gap-4 sm:grid-cols-3">
+        <div class="rounded-xs bg-linen p-6"><dt class="label">Postulantes en examen</dt><dd id="exam-count" class="mt-3 text-[40px] leading-none tracking-[-1.2px]">—</dd></div>
+        <div class="rounded-xs bg-linen p-6"><dt class="label">Postulantes en entrevista</dt><dd id="interview-count" class="mt-3 text-[40px] leading-none tracking-[-1.2px]">—</dd></div>
+        <div class="rounded-xs bg-linen p-6"><dt class="label">Grupos programados</dt><dd id="group-count" class="mt-3 text-[40px] leading-none tracking-[-1.2px]">—</dd></div>
+      </dl>
+
+      <p class="mt-6 rounded-xs border border-hairline bg-white px-4 py-3 text-sm text-iron"><strong class="font-normal text-ink">Fuente: Excel.</strong> Es una copia del corte, no una consulta en tiempo real a SIGAE. Las horas y los docentes no se completan si no figuran en la fuente.</p>
+
+      <section class="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xs border border-hairline bg-white p-6">
+        <div>
+          <h2 class="text-xl tracking-[-0.2px]">Aulas institucionales</h2>
+          <p id="room-status" class="mt-1 text-sm text-iron">Sincroniza el catálogo de Intranet vinculado a SIGAE.</p>
+          <p class="mt-1 text-xs text-graphite">La disponibilidad real requiere consultar las reservas institucionales.</p>
+        </div>
+        <button id="sync" type="button" class="btn-outline">Sincronizar aulas</button>
+      </section>
+
+      <section class="mt-6 overflow-hidden rounded-xs border border-hairline bg-white">
+        <div class="border-b border-hairline p-6">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 class="text-2xl tracking-[-0.48px]">Programación por grupo</h2>
+              <p class="mt-1 text-sm text-iron">Selecciona un grupo para ver su lista y generar la ficha.</p>
+            </div>
+            <span id="result-count" class="label"></span>
+          </div>
+          <div class="mt-5 grid gap-3 md:grid-cols-[1fr_220px]">
+            <label class="sr-only" for="search">Buscar programa, aula o grupo</label>
+            <input id="search" type="search" placeholder="Buscar programa, aula o grupo" class="field" />
+            <label class="sr-only" for="type">Tipo de actividad</label>
+            <select id="type" class="field">
+              <option value="">Todas las actividades</option>
+              <option value="examen">Examen</option>
+              <option value="entrevistas">Entrevista</option>
+            </select>
+          </div>
+        </div>
+        <div id="groups"></div>
+      </section>
+
+      <section id="detail" class="mt-6 hidden overflow-hidden rounded-xs border border-hairline bg-white">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline p-6">
+          <div>
+            <p class="label">Lista de postulantes</p>
+            <h2 id="detail-title" class="mt-2 text-2xl tracking-[-0.48px]"></h2>
+            <p id="detail-meta" class="mt-1 text-sm text-iron"></p>
+          </div>
+          <a id="acta" target="_blank" rel="noopener" class="btn-primary">Abrir acta<ExternalLink class="size-4" aria-hidden="true" /></a>
+        </div>
+        <form id="transfer" class="border-b border-hairline bg-linen px-6 py-5">
+          <div class="flex flex-wrap items-end gap-3">
+            <label class="label min-w-56 flex-1">Trasladar seleccionados a
+              <select id="destination" required class="field mt-2 normal-case tracking-normal"></select>
+            </label>
+            <button id="transfer-button" class="btn-primary">Guardar asignación</button>
+          </div>
+          <p class="mt-3 text-xs text-graphite">Cambios locales para el mismo programa y actividad; verifica manualmente el aforo y horario. No modifican SIGAE ni el Excel.</p>
+        </form>
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[540px] text-left text-sm">
+            <thead class="label bg-cream"><tr>
+              <th class="px-6 py-3"><input id="select-all" type="checkbox" aria-label="Seleccionar todos" /></th>
+              <th class="px-6 py-3 font-normal">N°</th><th class="px-6 py-3 font-normal">Apellidos y nombres</th><th class="px-6 py-3 font-normal">Documento</th>
+            </tr></thead>
+            <tbody id="people" class="divide-y divide-hairline"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+</Base>
+
 <script>
-const api='http://127.0.0.1:4351';const $=(s:string)=>document.querySelector<HTMLElement>(s)!;const options={credentials:'include' as RequestCredentials};let groups:any[]=[],currentGroup=-1;
-function alertMessage(text:string,error=false){const box=$('#alert');box.textContent=text;box.className=`mb-5 rounded-lg border px-4 py-3 text-sm ${error?'border-red-200 bg-red-50 text-red-800':'border-emerald-200 bg-emerald-50 text-emerald-800'}`;}
-async function get(path:string){const response=await fetch(api+path,options);if(!response.ok)throw new Error(response.status===401?'Necesitas ingresar con la clave local.':'No se pudieron cargar los datos.');return response.json();}
-function row(text:string,classes:string){const e=document.createElement('span');e.className=classes;e.textContent=text;return e;}
-function paint(){const term=(document.querySelector<HTMLInputElement>('#search')!.value).toLocaleLowerCase('es');const type=document.querySelector<HTMLSelectElement>('#type')!.value;const selected=groups.filter(g=>(!type||g.tipo===type)&&`${g.programa} ${g.aula} ${g.grupo??''} ${g.sede??''}`.toLocaleLowerCase('es').includes(term));$('#result-count').textContent=`${selected.length} grupos`;const box=$('#groups');box.replaceChildren();if(!selected.length){box.textContent='No encontramos grupos con esos filtros.';box.className='p-5 text-sm text-slate-500';return;}box.className='divide-y divide-slate-100';for(const g of selected){const b=document.createElement('button');b.type='button';b.className='group flex w-full flex-wrap items-center justify-between gap-3 px-5 py-4 text-left hover:bg-slate-50';const info=document.createElement('span');info.className='min-w-0';info.append(row(g.programa,'block font-semibold text-slate-900'),row(`${g.tipo==='examen'?'Examen':'Entrevista'} · ${g.fecha??'15/11/2026'} · ${g.sede??'Iquitos'} · Aula ${g.aula}${g.grupo?' · '+g.grupo:''}`,'mt-1 block text-sm text-slate-500'));const tail=row(`${g.total} postulantes  →`,'text-sm font-medium text-blue-700');b.append(info,tail);b.addEventListener('click',()=>showGroup(g.indice));box.append(b);}}
-async function showGroup(index:number){try{const g=await get(`/api/grupos/${index}`);currentGroup=index;$('#detail-title').textContent=g.programa;$('#detail-meta').textContent=`${g.tipo==='examen'?'Examen':'Entrevista'} · Aula ${g.aula} · ${g.postulantes.length} postulantes`;const tbody=$('#people');tbody.replaceChildren();document.querySelector<HTMLInputElement>('#select-all')!.checked=false;g.postulantes.forEach((p:any,i:number)=>{const tr=document.createElement('tr');const td=document.createElement('td');td.className='px-5 py-3';const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.name='documentos';checkbox.value=p.documento;checkbox.setAttribute('aria-label',`Seleccionar a ${p.nombre}`);td.append(checkbox);tr.append(td);for(const value of [String(i+1),p.nombre,p.documento]){const cell=document.createElement('td');cell.className='px-5 py-3';cell.textContent=value;tr.append(cell);}tbody.append(tr);});const dest=document.querySelector<HTMLSelectElement>('#destination')!;dest.replaceChildren(new Option('Selecciona otro grupo',''));for(const candidate of groups.filter(x=>x.indice!==index&&x.tipo===g.tipo&&x.programa===g.programa))dest.add(new Option(`${candidate.fecha??candidate.sede??''} · Aula ${candidate.aula}${candidate.grupo?' · '+candidate.grupo:''}`,String(candidate.indice)));document.querySelector<HTMLButtonElement>('#transfer-button')!.disabled=dest.options.length===1;document.querySelector<HTMLAnchorElement>('#acta')!.href=`${api}/api/fichas/${index}`;$('#detail').classList.remove('hidden');$('#detail').scrollIntoView({behavior:'smooth',block:'start'});}catch(error){alertMessage(error instanceof Error?error.message:'No se pudo cargar el grupo.',true);}}
-async function load(){const data=await get('/api/fuente');groups=data.grupos;$('#exam-count').textContent=String(groups.filter(g=>g.tipo==='examen').reduce((n,g)=>n+g.total,0));$('#interview-count').textContent=String(groups.filter(g=>g.tipo==='entrevistas').reduce((n,g)=>n+g.total,0));$('#group-count').textContent=String(groups.length);$('#login').classList.add('hidden');$('#dashboard').classList.remove('hidden');paint();}
-document.querySelector<HTMLFormElement>('#login-form')!.addEventListener('submit',async e=>{e.preventDefault();try{const clave=String(new FormData(e.currentTarget as HTMLFormElement).get('clave'));const response=await fetch(api+'/api/sesion',{...options,method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clave})});const data=await response.json();if(!response.ok)throw new Error(data.error);$('#alert').classList.add('hidden');await load();}catch(error){alertMessage(error instanceof Error?error.message:'No se pudo ingresar.',true);}});
-$('#search').addEventListener('input',paint);$('#type').addEventListener('change',paint);load().catch(()=>{});
-$('#sync').addEventListener('click',async()=>{try{const response=await fetch(api+'/api/sincronizar-aulas',{...options,method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});const data=await response.json();if(!response.ok)throw new Error(data.error);const all=await get('/api/datos');const rooms=all.aulas.filter((a:any)=>a.codigo);$('#room-status').textContent=rooms.length?rooms.map((a:any)=>`${a.nombre} (${a.capacidad})`).join(' · '):'No hay aulas habilitadas con capacidad en el catálogo.';alertMessage(`Se sincronizaron ${data.importadas} aulas institucionales.`);}catch(error){alertMessage(error instanceof Error?error.message:'No se pudo sincronizar.',true);window.scrollTo({top:0,behavior:'smooth'});}});
-document.querySelector<HTMLInputElement>('#select-all')!.addEventListener('change',e=>document.querySelectorAll<HTMLInputElement>('#people input[type=checkbox]').forEach(c=>c.checked=(e.target as HTMLInputElement).checked));
-document.querySelector<HTMLFormElement>('#transfer')!.addEventListener('submit',async e=>{e.preventDefault();const documentos=[...document.querySelectorAll<HTMLInputElement>('#people input:checked')].map(c=>c.value);const destino=Number(document.querySelector<HTMLSelectElement>('#destination')!.value);try{const response=await fetch(api+'/api/trasladar',{...options,method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({origen:currentGroup,destino,documentos})});const data=await response.json();if(!response.ok)throw new Error(data.error);await load();await showGroup(currentGroup);alertMessage(`Se trasladaron ${documentos.length} postulantes en esta copia local.`);}catch(error){alertMessage(error instanceof Error?error.message:'No se pudo guardar.',true);}});
+  import '../scripts/admin.ts';
 </script>
