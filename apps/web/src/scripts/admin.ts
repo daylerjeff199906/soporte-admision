@@ -39,7 +39,7 @@ function alertMessage(text: string, error = false) {
 
 async function get<T>(path: string): Promise<T> {
   const response = await fetch(path, options);
-  if (!response.ok) throw new Error(response.status === 401 ? 'Necesitas ingresar con la clave local.' : 'No se pudieron cargar los datos.');
+  if (!response.ok) throw new Error(response.status === 401 ? 'Tu sesión venció; inicia sesión de nuevo.' : 'No se pudieron cargar los datos.');
   return response.json() as Promise<T>;
 }
 
@@ -122,19 +122,26 @@ async function load() {
   $('#group-count').textContent = String(groups.length);
   $('#login').classList.add('hidden');
   $('#dashboard').classList.remove('hidden');
+  $('#logout').classList.remove('hidden');
   paint();
 }
 
 $<HTMLFormElement>('#login-form').addEventListener('submit', async e => {
   e.preventDefault();
+  const formulario = e.currentTarget as HTMLFormElement;
   try {
-    const clave = String(new FormData(e.currentTarget as HTMLFormElement).get('clave'));
-    await post('/api/sesion', { clave });
+    const datos = new FormData(formulario);
+    await post('/api/sesion', { usuario: String(datos.get('usuario')), clave: String(datos.get('clave')) });
+    formulario.reset(); // no dejar la contraseña en el formulario
     $('#alert').classList.add('hidden');
     await load();
   } catch (error) {
     alertMessage(error instanceof Error ? error.message : 'No se pudo ingresar.', true);
   }
+});
+
+$('#logout').addEventListener('click', async () => {
+  try { await post('/api/salir', {}); } finally { location.reload(); }
 });
 
 $('#search').addEventListener('input', paint);
