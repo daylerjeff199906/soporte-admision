@@ -1,12 +1,12 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { openDatabase, datos, crearEvento, asignar, asignarLote, importarAulas, crearActa } from './db.ts';
 import { renderActa } from './acta.ts';
 import { fuente, resumen, buscarPostulante, trasladar } from './fuente.ts';
 import { consultarSigae } from './sigae.ts';
+import { cargarCredenciales, cargarSecreto, crearToken, DURACION_SESION_MS, iguales, usuarioDeToken } from './auth.ts';
 import type { Entrada } from './tipos.ts';
 
 if (process.env.NODE_ENV === 'production') throw new Error('Este laboratorio solo admite datos de ejemplo y no puede ejecutarse en producción.');
@@ -19,14 +19,12 @@ const allowedHosts = (process.env.ALLOWED_HOSTS ?? `127.0.0.1:${port}`).split(',
 const directory = process.env.DATA_DIR ?? fileURLToPath(new URL('../../../data', import.meta.url));
 mkdirSync(directory, { recursive: true });
 const db = openDatabase(join(directory, 'programacion.sqlite'), false);
-const accessFile = join(directory, 'acceso-local.txt');
-if (!existsSync(accessFile)) writeFileSync(accessFile, randomBytes(24).toString('hex'), { mode: 0o600 });
-const access = readFileSync(accessFile, 'utf8').trim();
-
-const same = (a: string, b: string): boolean => {
-  const x = Buffer.from(a), y = Buffer.from(b);
-  return x.length === y.length && timingSafeEqual(x, y);
-};
+const credenciales = cargarCredenciales(process.env, join(directory, 'acceso-local.txt'));
+const secreto = cargarSecreto(process.env, join(directory, 'sesion.secret'));
+if (credenciales.generada) console.warn('ADMIN_PASSWORD no está configurada: se usa la clave generada en data/acceso-local.txt. Define ADMIN_USER y ADMIN_PASSWORD en .env.');
+const COOKIE = 'admision_sesion';
+const secure = process.env.COOKIE_SECURE === '1' || process.env.COOKIE_SECURE === 'true' ? '; Secure' : '';
+const cookieSesion = (valor: string, maxAge: number) => `${COOKIE}=${valor}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${maxAge}${secure}`;
 const attempts = new Map<string, { n: number; reset: number }>();
 function limit(key: string, max: number): boolean {
   const now = Date.now(), entry = attempts.get(key);
@@ -73,16 +71,24 @@ async function manejar(req: IncomingMessage, res: ServerResponse): Promise<void>
       if (body === null) return json(413, { error: 'Solicitud demasiado grande.' });
       let input: unknown;
       try { input = JSON.parse(body); } catch { return json(400, { error: 'Datos inválidos.' }); }
-      const clave = (input as { clave?: unknown } | null)?.clave;
-      if (typeof clave !== 'string' || !same(clave, access)) return json(401, { error: 'Clave incorrecta.' });
-      res.setHeader('Set-Cookie', `admision_local=${access}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800`);
+      const { usuario, clave } = (input ?? {}) as { usuario?: unknown; clave?: unknown };
+      // Se evalúan ambos campos siempre, para no revelar cuál falló.
+      const usuarioOk = typeof usuario === 'string' && iguales(usuario.trim(), credenciales.usuario);
+      const claveOk = typeof clave === 'string' && iguales(clave, credenciales.clave);
+      if (!usuarioOk || !claveOk) return json(401, { error: 'Usuario o contraseña incorrectos.' });
+      res.setHeader('Set-Cookie', cookieSesion(crearToken(credenciales.usuario, secreto), DURACION_SESION_MS / 1000));
+      return json(200, { ok: true, usuario: credenciales.usuario });
+    }
+    if (req.method === 'POST' && url.pathname === '/api/salir') {
+      if (!origenValido(req.headers.origin)) return json(403, { error: 'Origen no permitido.' });
+      res.setHeader('Set-Cookie', cookieSesion('', 0));
       return json(200, { ok: true });
     }
     if (req.method === 'GET' && url.pathname === '/api/salud') return json(200, { ok: true });
-    const authorized = (req.headers.cookie ?? '').split(';').some(c => {
-      const [k, v] = c.trim().split('=');
-      return k === 'admision_local' && typeof v === 'string' && same(v, access);
-    });
+    const token = (req.headers.cookie ?? '').split(';').map(c => c.trim().split('=')).find(([k]) => k === COOKIE)?.[1];
+    const usuarioSesion = usuarioDeToken(token, secreto);
+    const authorized = usuarioSesion !== null && iguales(usuarioSesion, credenciales.usuario);
+    if (req.method === 'GET' && url.pathname === '/api/yo') return authorized ? json(200, { usuario: usuarioSesion }) : json(401, { error: 'Acceso requerido.' });
     if (!authorized && url.pathname !== '/api/consulta') return json(401, { error: 'Acceso local requerido.' });
     if (req.method === 'GET' && url.pathname === '/api/fuente') return json(200, resumen(db));
     const groupMatch = /^\/api\/grupos\/(\d+)$/.exec(url.pathname);

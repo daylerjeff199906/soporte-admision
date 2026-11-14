@@ -8,6 +8,12 @@ services:
       ALLOWED_HOSTS: api:4351
       WEB_ORIGIN: http://127.0.0.1:4350,http://localhost:4350
       FUENTE_PATH: /data/fuentes-excel/grupos.json
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-}
+      SIGAE_API_URL: ${SIGAE_API_URL:-https://api.postgradounap.edu.pe/}
+      SIGAE_CONVOCATORIA: ${SIGAE_CONVOCATORIA:-adc6bcb2-4935-48f0-9ed8-c55454aad806}
       INTRANET_URL: ${INTRANET_URL:-}
       INTRANET_SERVICE_KEY: ${INTRANET_SERVICE_KEY:-}
     volumes:

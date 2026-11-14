@@ -3,6 +3,7 @@
  *
  *   node tools/generar-actas.ts [salida] [--tipo=examen|entrevistas]
  *
+ * Credenciales: ADMIN_USER y ADMIN_PASSWORD del .env.
  * Variables: BASE_URL (http://127.0.0.1:4350), NAVEGADOR (ruta de Edge/Chrome para los PDF).
  * Los archivos contienen datos personales: se guardan en data/actas/ (excluida de Git).
  */
@@ -18,7 +19,11 @@ const raiz = resolve(import.meta.dirname, '..');
 const args = process.argv.slice(2);
 const filtroTipo = args.find(a => a.startsWith('--tipo='))?.slice(7);
 const salida = resolve(args.find(a => !a.startsWith('--')) ?? join(raiz, 'data', 'actas'));
-const clave = readFileSync(join(raiz, 'data', 'acceso-local.txt'), 'utf8').trim();
+try { process.loadEnvFile(join(raiz, '.env')); } catch { /* sin .env: se usa el archivo de acceso */ }
+const usuario = process.env.ADMIN_USER || 'admin';
+const clave = process.env.ADMIN_PASSWORD
+  || /^clave:\s*(\S+)/m.exec(readFileSync(join(raiz, 'data', 'acceso-local.txt'), 'utf8'))?.[1]
+  || readFileSync(join(raiz, 'data', 'acceso-local.txt'), 'utf8').trim();
 const navegador = [
   process.env.NAVEGADOR,
   'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
@@ -29,7 +34,7 @@ const navegador = [
 
 const slug = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
 
-const sesion = await fetch(`${base}/api/sesion`, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: base }, body: JSON.stringify({ clave }) });
+const sesion = await fetch(`${base}/api/sesion`, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: base }, body: JSON.stringify({ usuario, clave }) });
 if (!sesion.ok) throw new Error(`No se pudo iniciar sesión (${sesion.status}). ¿Está levantada la app en ${base}?`);
 const cookie = (sesion.headers.get('set-cookie') ?? '').split(';')[0] ?? '';
 const get = (ruta: string) => fetch(base + ruta, { headers: { Cookie: cookie } });

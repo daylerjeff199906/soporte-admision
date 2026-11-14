@@ -6,7 +6,7 @@ Aplicación local para consultar la programación del proceso 2026-II, generar f
 
 Solo requiere Docker. Todo el código es TypeScript (API ejecutada directamente por Node 24, web con Astro).
 
-1. Copia `Entrevistas_Admision_2026-II.xlsx` y `Examen_aulas_Admision_2026-II.xlsx` en `data/entrada/` (carpeta excluida de Git).
+1. Copia `.env.example` a `.env` y define `ADMIN_USER` y `ADMIN_PASSWORD` (acceso al panel interno). Copia `Entrevistas_Admision_2026-II.xlsx` y `Examen_aulas_Admision_2026-II.xlsx` en `data/entrada/`. Ambos (`.env` y `data/`) están excluidos de Git.
 2. Genera los datos de consulta (una vez, o cuando cambien los Excel):
 
 ```powershell
@@ -19,7 +19,7 @@ docker compose run --rm importar
 docker compose up -d --build
 ```
 
-4. Abre http://127.0.0.1:4350/consulta/ (consulta por DNI) o http://127.0.0.1:4350 (panel interno; la clave está en `data/acceso-local.txt`). Para detener: `docker compose down`.
+4. Abre http://127.0.0.1:4350/consulta/ (consulta por DNI) o http://127.0.0.1:4350 (panel interno; inicia sesión con `ADMIN_USER` y `ADMIN_PASSWORD` de tu `.env`; si no defines contraseña, se genera una en `data/acceso-local.txt`). Para detener: `docker compose down`.
 
 Solo el servicio web se publica, y únicamente en `127.0.0.1:4350`; la API es interna y nginx le reenvía `/api`. Las rutas son locales y no son accesibles por internet. Las actas se abren en el navegador y se imprimen o guardan como PDF.
 
@@ -53,6 +53,6 @@ La Intranet administra los ambientes vinculados a SIGAE. La sincronización opci
 
 ## Límites antes de publicar
 
-La API escucha solo en `127.0.0.1`, y no arranca con `NODE_ENV=production`. La clave protege el listado local, pero **no sustituye usuarios individuales, permisos institucionales ni auditoría de seguridad**. El DNI se puede adivinar; antes de publicar la consulta con datos reales se requiere verificar la identidad y acordar controles contra consultas masivas y exposición de datos. La fecha del corte no se actualiza sola.
+La API escucha solo en `127.0.0.1`, y no arranca con `NODE_ENV=production`. El panel usa un único usuario y contraseña (sesión firmada de 8 horas), pero **no sustituye usuarios individuales, permisos institucionales ni auditoría de seguridad**. El DNI se puede adivinar; antes de publicar la consulta con datos reales se requiere verificar la identidad y acordar controles contra consultas masivas y exposición de datos. La fecha del corte no se actualiza sola.
 
 Verificación: `corepack pnpm test` y `corepack pnpm build`. Las pruebas usan bases en memoria y datos sintéticos; los JSON reales se generan localmente con los Excel.

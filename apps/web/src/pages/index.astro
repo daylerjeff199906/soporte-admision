@@ -1,11 +1,14 @@
 ---
-import { ExternalLink } from '@lucide/astro';
+import { ExternalLink, LogOut } from '@lucide/astro';
 import Base from '../layouts/Base.astro';
 ---
 <Base title="Programación de admisión · EPG UNAP">
   <header class="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-4 px-6 py-6 md:px-12">
     <a href="/" class="text-base font-normal tracking-tight">EPG UNAP<span class="ml-3 border-l border-hairline pl-3 text-sm font-light text-graphite">Admisión</span></a>
-    <a href="/consulta/" class="btn-outline h-10">Consulta del postulante<ExternalLink class="size-4" aria-hidden="true" /></a>
+    <div class="flex flex-wrap gap-2">
+      <a href="/consulta/" class="btn-outline h-10">Consulta del postulante<ExternalLink class="size-4" aria-hidden="true" /></a>
+      <button id="logout" type="button" class="btn-outline hidden h-10"><LogOut class="size-4" aria-hidden="true" />Cerrar sesión</button>
+    </div>
   </header>
 
   <main class="mx-auto max-w-[1200px] px-6 pb-24 pt-8 md:px-12">
@@ -21,16 +24,19 @@ import Base from '../layouts/Base.astro';
     <div id="alert" role="status" aria-live="polite" class="mb-6 hidden rounded-xs border px-4 py-3 text-sm"></div>
 
     <section id="login" class="max-w-md rounded-xs border border-hairline bg-white p-8">
-      <p class="label">Acceso local</p>
-      <h2 class="mt-3 text-2xl tracking-[-0.48px]">Acceso a programación</h2>
-      <p class="mt-3 text-sm leading-6 text-iron">Ingresa la clave local para consultar las listas y generar las fichas.</p>
+      <p class="label">Acceso restringido</p>
+      <h2 class="mt-3 text-2xl tracking-[-0.48px]">Iniciar sesión</h2>
+      <p class="mt-3 text-sm leading-6 text-iron">Ingresa tu usuario y contraseña para consultar las listas y generar las actas.</p>
       <form id="login-form" class="mt-6 space-y-4">
-        <label class="label block">Clave local
+        <label class="label block">Usuario
+          <input name="usuario" type="text" required autocomplete="username" autocapitalize="none" spellcheck="false" class="field mt-2 normal-case tracking-normal" />
+        </label>
+        <label class="label block">Contraseña
           <input name="clave" type="password" required autocomplete="current-password" class="field mt-2 normal-case tracking-normal" />
         </label>
         <button class="btn-primary w-full">Ingresar</button>
       </form>
-      <p class="mt-4 text-xs leading-5 text-graphite">La clave está en <code class="font-mono">data/acceso-local.txt</code>.</p>
+      <p class="mt-4 text-xs leading-5 text-graphite">El usuario y la contraseña se definen en el archivo <code class="font-mono">.env</code> (<code class="font-mono">ADMIN_USER</code>, <code class="font-mono">ADMIN_PASSWORD</code>).</p>
     </section>
 
     <div id="dashboard" class="hidden">
