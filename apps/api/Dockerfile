@@ -4,6 +4,7 @@ WORKDIR /app
 COPY apps/api/assets ./apps/api/assets
 COPY apps/api/src ./apps/api/src
 ENV DATA_DIR=/data
+RUN mkdir -p /data && chown node:node /data
 VOLUME /data
 USER node
 EXPOSE 4351

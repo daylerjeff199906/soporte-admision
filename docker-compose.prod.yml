@@ -1,0 +1,67 @@
+# Despliegue en Dokploy (tipo "Docker Compose").
+# 1. Crea la app, apunta este archivo como Compose Path.
+# 2. En "Domains", agrega tu dominio al servicio `web`, puerto 80.
+# 3. Define WEB_ORIGIN con el dominio público (https://...), sin barra final.
+# No definas NODE_ENV=production: la API se niega a arrancar así por diseño.
+name: admision
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.prod
+    environment:
+      HOST: 0.0.0.0
+      PORT: "4351"
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-api:4351}
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost}
+      DATA_DIR: /data
+      FUENTE_PATH: /data/fuentes-excel/grupos.json
+      SIGAE_API_URL: ${SIGAE_API_URL:-https://api.postgradounap.edu.pe/}
+      SIGAE_CONVOCATORIA: ${SIGAE_CONVOCATORIA:-adc6bcb2-4935-48f0-9ed8-c55454aad806}
+      INTRANET_URL: ${INTRANET_URL:-}
+      INTRANET_SERVICE_KEY: ${INTRANET_SERVICE_KEY:-}
+    volumes:
+      - datos:/data
+    # La API no se publica: solo la alcanza `web`.
+    expose:
+      - "4351"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "--header=Host: api:4351", "http://127.0.0.1:4351/api/salud"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.prod
+    depends_on:
+      api:
+        condition: service_healthy
+    expose:
+      - "80"
+    networks:
+      - default
+      - dokploy-network
+    restart: unless-stopped
+
+  # docker compose -f docker-compose.prod.yml run --rm importar
+  # Copia los Excel en ADMISION_ENTRADA_DIR (por defecto ./data/entrada).
+  importar:
+    profiles: ["tools"]
+    build:
+      context: .
+      dockerfile: tools/Dockerfile
+    volumes:
+      - datos:/data
+      - ${ADMISION_ENTRADA_DIR:-./data/entrada}:/data/entrada
+
+volumes:
+  datos:
+
+networks:
+  dokploy-network:
+    external: true
