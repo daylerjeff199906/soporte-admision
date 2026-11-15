@@ -127,12 +127,14 @@ async function manejar(req: IncomingMessage, res: ServerResponse): Promise<void>
       const input = parsed as Entrada;
       if (url.pathname === '/api/consulta') {
         if (limit('consulta', 10)) return json(429, { error: 'Demasiadas consultas. Espera un minuto.' });
-        const encontrado = buscarPostulante(db, input.dni);
-        if (!encontrado.postulante) return json(200, { ...encontrado, sigae: null });
-        // SIGAE aporta el nombre oficial, la foto y si la inscripción sigue activa; si no responde se usa el Excel.
-        const sigae = await consultarSigae(encontrado.postulante.documento);
+        const encontrado = buscarPostulante(db, input.dni); // valida el DNI
+        const dni = String(input.dni);
+        // SIGAE aporta el nombre oficial, la foto y el estado de la inscripción; si no responde se usa el Excel.
+        const sigae = await consultarSigae(dni);
+        // Fuera del Excel el postulante puede existir en SIGAE (p. ej. inscripción inactiva o sin verificar): se responde con su estado y sin programación.
+        if (!encontrado.postulante && !sigae?.nombre) return json(200, { postulante: null, actividades: [], sigae: null });
         return json(200, {
-          postulante: { ...encontrado.postulante, nombre: sigae?.nombre || encontrado.postulante.nombre, foto: sigae?.foto ?? undefined },
+          postulante: { documento: dni, nombre: sigae?.nombre || encontrado.postulante?.nombre || '', foto: sigae?.foto ?? undefined },
           actividades: encontrado.actividades,
           sigae: sigae ? estadoSigae(sigae) : null,
         });

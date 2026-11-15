@@ -65,7 +65,7 @@ function seccionFija(numero: string, titulo: string): { root: HTMLElement; body:
 }
 
 /** Estado en SIGAE: dos insignias (verificación e inscripción) y, si algo queda pendiente, la observación. */
-function estadoSigae(s: EstadoSigae): HTMLElement {
+function estadoSigae(s: EstadoSigae, conObservacion = true): HTMLElement {
   const insignia = (ok: boolean, nodo: IconNode, texto: string) => {
     const b = h('span', `inline-flex items-center gap-1.5 rounded-xs px-2.5 py-1 text-xs font-normal ${ok ? 'bg-brand-tint text-brand' : 'bg-[#a11]/10 text-[#a11]'}`);
     b.append(icono(nodo, 'size-3.5'), texto);
@@ -78,7 +78,7 @@ function estadoSigae(s: EstadoSigae): HTMLElement {
     insignia(s.activo, s.activo ? CircleCheck : CircleX, s.activo ? 'Estado: Activo' : 'Estado: Inactivo'),
   );
   caja.append(fila);
-  if (s.observacion) {
+  if (conObservacion && s.observacion) {
     const nota = h('p', 'rounded-xs border border-hairline bg-cream px-4 py-3 text-sm leading-relaxed text-graphite');
     nota.append(h('strong', 'font-medium text-ink', 'Observación: '), s.observacion);
     caja.append(nota);
@@ -87,6 +87,7 @@ function estadoSigae(s: EstadoSigae): HTMLElement {
 }
 
 function seccionPostulante(p: Postulante, actividades: Actividad[], sigae: Respuesta['sigae']): HTMLElement {
+  const sinProgramacion = actividades.length === 0;
   const { root, body } = seccionFija('01', 'Información del postulante');
   const fila = h('div', 'flex flex-col gap-6 sm:flex-row sm:items-start');
 
@@ -107,9 +108,9 @@ function seccionPostulante(p: Postulante, actividades: Actividad[], sigae: Respu
   const lista = h('dl', 'mt-6 grid gap-x-6 gap-y-5 sm:grid-cols-2');
   lista.append(dato('Documento', p.documento));
   const programas = unicos(actividades.map(a => a.programa));
-  lista.append(dato(programas.length > 1 ? 'Programas' : 'Programa', programas.join(' · ')));
+  if (programas.length) lista.append(dato(programas.length > 1 ? 'Programas' : 'Programa', programas.join(' · ')));
   datos.append(lista);
-  if (sigae) datos.append(estadoSigae(sigae));
+  if (sigae) datos.append(estadoSigae(sigae, !sinProgramacion)); // sin programación, la observación va en su propia tarjeta
 
   fila.append(foto, datos);
   body.append(fila);
@@ -221,7 +222,19 @@ function seccionIndicaciones(examenes: Actividad[], entrevistas: Actividad[]): H
   return root;
 }
 
+/** Postulante que figura en SIGAE pero no tiene examen asignado: se explica por qué según el estado de su inscripción. */
+function tarjetaSinProgramacion(s: Respuesta['sigae']): HTMLElement {
+  const texto = !s ? 'Aún no tienes programación asignada. Comunícate con Admisión.'
+    : !s.verificado ? 'Estás registrado en SIGAE, pero no encontramos una inscripción en la convocatoria 2026-II. Comunícate con Admisión.'
+    : !s.activo ? 'Aún no tienes programación asignada porque en el sistema SIGAE tu inscripción figura como inactiva. Queda pendiente para su verificación posterior; cuando sea verificada podrás consultar aquí tu aula y horario.'
+    : 'Tu inscripción figura activa en SIGAE, pero todavía no tienes examen programado. Vuelve a consultar más adelante o comunícate con Admisión.';
+  const caja = h('section', 'rounded-xs border border-hairline bg-white p-6 md:p-8');
+  caja.append(h('p', 'label', 'Sin programación'), h('p', 'mt-3 text-base leading-7 text-iron', texto));
+  return caja;
+}
+
 function pintar(r: Completa) {
+  if (!r.actividades.length) { el('#resultado').replaceChildren(seccionPostulante(r.postulante, [], r.sigae), tarjetaSinProgramacion(r.sigae)); return; }
   const examenes = r.actividades.filter(a => a.tipo === 'examen');
   const entrevistas = r.actividades.filter(a => a.tipo === 'entrevistas');
   const mismoDia = examenes.some(a => /entrevista personal el mismo d[ií]a/i.test(a.instrucciones ?? ''));
@@ -248,7 +261,7 @@ const dniDeUrl = () => new URLSearchParams(location.search).get('dni');
 function leerCache(): Completa | null {
   try {
     const datos = JSON.parse(sessionStorage.getItem(CLAVE_RESULTADO) ?? 'null') as Respuesta | null;
-    return datos?.postulante && datos.actividades?.length ? (datos as Completa) : null;
+    return datos?.postulante ? (datos as Completa) : null;
   } catch { return null; }
 }
 const guardar = (r: Respuesta) => sessionStorage.setItem(CLAVE_RESULTADO, JSON.stringify(r));
