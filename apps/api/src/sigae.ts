@@ -10,8 +10,25 @@
 export interface PerfilSigae {
   nombre: string;
   foto: string | null;
-  /** Tiene una ficha de postulación activa en la convocatoria configurada. */
+  /** Tiene una ficha de postulación en la convocatoria configurada (aunque esté inactiva). */
+  inscrito: boolean;
+  /** La ficha de postulación está activa. */
   activo: boolean;
+}
+
+/** Estado que se muestra al postulante en el detalle. */
+export interface EstadoSigae {
+  /** Su inscripción fue encontrada en SIGAE. */
+  verificado: boolean;
+  activo: boolean;
+  /** Mensaje para el postulante cuando algo queda pendiente; `null` si todo está en orden. */
+  observacion: string | null;
+}
+
+export function estadoSigae(perfil: PerfilSigae): EstadoSigae {
+  if (!perfil.inscrito) return { verificado: false, activo: false, observacion: 'No encontramos tu inscripción en el sistema SIGAE. Queda pendiente para su verificación posterior.' };
+  if (!perfil.activo) return { verificado: true, activo: false, observacion: 'En el sistema SIGAE figura como inactivo. Queda pendiente para su verificación posterior.' };
+  return { verificado: true, activo: true, observacion: null };
 }
 
 type Fetcher = (url: string, init?: RequestInit) => Promise<Response>;
@@ -32,7 +49,7 @@ async function obtener<T>(ruta: string, fetcher: Fetcher): Promise<T> {
   return (await respuesta.json()) as T;
 }
 
-/** Devuelve el perfil del postulante en SIGAE o `null` si no existe o SIGAE no responde. */
+/** Devuelve el perfil del postulante en SIGAE (`inscrito: false` si no figura) o `null` si SIGAE no responde. */
 export async function consultarSigae(dni: string, fetcher: Fetcher = fetch): Promise<PerfilSigae | null> {
   const guardado = cache.get(dni);
   if (guardado && guardado.vence > Date.now()) return guardado.valor;
@@ -40,11 +57,14 @@ export async function consultarSigae(dni: string, fetcher: Fetcher = fetch): Pro
   try {
     const personas = await obtener<{ results: PersonaSigae[] }>(`person/person/?document_number=${dni}`, fetcher);
     const persona = personas.results.find(p => p.document_number === dni);
-    if (persona) {
+    if (!persona) {
+      valor = { nombre: '', foto: null, inscrito: false, activo: false };
+    } else {
       const fichas = await obtener<FichaSigae[]>(`admission/applicantfile/?person_uuid=${encodeURIComponent(persona.uuid)}&promotion_convocatory__convocatory__uuid=${convocatoria()}`, fetcher);
       valor = {
         nombre: [persona.last_name1, persona.last_name2, persona.names].filter(Boolean).join(' ').trim(),
         foto: persona.photo?.startsWith('https://') ? persona.photo : null,
+        inscrito: fichas.length > 0,
         activo: fichas.some(f => f.is_active),
       };
     }

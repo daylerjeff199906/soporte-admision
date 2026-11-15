@@ -16,10 +16,17 @@ export interface Postulante {
   foto?: string;
 }
 
+export interface EstadoSigae {
+  verificado: boolean;
+  activo: boolean;
+  observacion: string | null;
+}
+
 export interface Respuesta {
   postulante: Postulante | null;
   actividades: Actividad[];
-  sigae?: { activo: boolean } | null;
+  /** Estado en SIGAE: `null` si SIGAE no respondió. */
+  sigae?: EstadoSigae | null;
   error?: string;
 }
 

@@ -1,7 +1,7 @@
-import { ArrowRight, CalendarDays, ChevronRight, Clock, DoorOpen, ListChecks, MapPin, type IconNode } from 'lucide';
+import { ArrowRight, BadgeCheck, CalendarDays, ChevronRight, CircleAlert, CircleCheck, CircleX, Clock, DoorOpen, ListChecks, MapPin, type IconNode } from 'lucide';
 import { el, h, icono, puntos } from './dom.ts';
 import { consultarDni, SIN_PROGRAMACION } from './api.ts';
-import { CLAVE_RESULTADO, type Actividad, type Postulante, type Respuesta } from './tipos.ts';
+import { CLAVE_RESULTADO, type Actividad, type EstadoSigae, type Postulante, type Respuesta } from './tipos.ts';
 
 type Completa = Respuesta & { postulante: Postulante };
 interface Chip { icono?: IconNode; texto: string }
@@ -64,6 +64,28 @@ function seccionFija(numero: string, titulo: string): { root: HTMLElement; body:
   return { root, body };
 }
 
+/** Estado en SIGAE: dos insignias (verificación e inscripción) y, si algo queda pendiente, la observación. */
+function estadoSigae(s: EstadoSigae): HTMLElement {
+  const insignia = (ok: boolean, nodo: IconNode, texto: string) => {
+    const b = h('span', `inline-flex items-center gap-1.5 rounded-xs px-2.5 py-1 text-xs font-normal ${ok ? 'bg-brand-tint text-brand' : 'bg-[#a11]/10 text-[#a11]'}`);
+    b.append(icono(nodo, 'size-3.5'), texto);
+    return b;
+  };
+  const caja = h('div', 'mt-6 space-y-3');
+  const fila = h('div', 'flex flex-wrap gap-2');
+  fila.append(
+    insignia(s.verificado, s.verificado ? BadgeCheck : CircleAlert, s.verificado ? 'Verificado en SIGAE' : 'Sin verificar'),
+    insignia(s.activo, s.activo ? CircleCheck : CircleX, s.activo ? 'Estado: Activo' : 'Estado: Inactivo'),
+  );
+  caja.append(fila);
+  if (s.observacion) {
+    const nota = h('p', 'rounded-xs border border-hairline bg-cream px-4 py-3 text-sm leading-relaxed text-graphite');
+    nota.append(h('strong', 'font-medium text-ink', 'Observación: '), s.observacion);
+    caja.append(nota);
+  }
+  return caja;
+}
+
 function seccionPostulante(p: Postulante, actividades: Actividad[], sigae: Respuesta['sigae']): HTMLElement {
   const { root, body } = seccionFija('01', 'Información del postulante');
   const fila = h('div', 'flex flex-col gap-6 sm:flex-row sm:items-start');
@@ -87,10 +109,7 @@ function seccionPostulante(p: Postulante, actividades: Actividad[], sigae: Respu
   const programas = unicos(actividades.map(a => a.programa));
   lista.append(dato(programas.length > 1 ? 'Programas' : 'Programa', programas.join(' · ')));
   datos.append(lista);
-  if (sigae) {
-    const activo = sigae.activo;
-    datos.append(h('p', `mt-6 inline-flex items-center gap-2 rounded-xs px-3 py-1.5 text-sm ${activo ? 'bg-brand-tint text-brand' : 'bg-[#a11]/10 text-[#a11]'}`, activo ? 'Inscripción activa en la convocatoria 2026-II' : 'Tu inscripción no figura activa en SIGAE; comunícate con Admisión'));
-  }
+  if (sigae) datos.append(estadoSigae(sigae));
 
   fila.append(foto, datos);
   body.append(fila);

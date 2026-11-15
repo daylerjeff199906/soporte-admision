@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { openDatabase, datos, crearEvento, asignar, asignarLote, importarAulas, crearActa } from './db.ts';
 import { renderActa } from './acta.ts';
 import { fuente, resumen, buscarPostulante, trasladar } from './fuente.ts';
-import { consultarSigae } from './sigae.ts';
+import { consultarSigae, estadoSigae } from './sigae.ts';
 import { cargarCredenciales, cargarSecreto, crearToken, DURACION_SESION_MS, iguales, usuarioDeToken } from './auth.ts';
 import type { Entrada } from './tipos.ts';
 
@@ -134,7 +134,7 @@ async function manejar(req: IncomingMessage, res: ServerResponse): Promise<void>
         return json(200, {
           postulante: { ...encontrado.postulante, nombre: sigae?.nombre || encontrado.postulante.nombre, foto: sigae?.foto ?? undefined },
           actividades: encontrado.actividades,
-          sigae: sigae ? { activo: sigae.activo } : null,
+          sigae: sigae ? estadoSigae(sigae) : null,
         });
       }
       if (url.pathname === '/api/trasladar') { trasladar(db, input); return json(200, { ok: true }); }

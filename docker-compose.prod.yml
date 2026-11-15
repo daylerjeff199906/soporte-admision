@@ -2,6 +2,7 @@
 # 1. Crea la app, apunta este archivo como Compose Path.
 # 2. En "Domains", agrega tu dominio al servicio `web`, puerto 80.
 # 3. Define WEB_ORIGIN con el dominio público (https://...), sin barra final.
+# 4. Define ADMIN_PASSWORD (obligatoria), ADMIN_USER y SESSION_SECRET en "Environment".
 # No definas NODE_ENV=production: la API se niega a arrancar así por diseño.
 name: admision
 
@@ -22,6 +23,13 @@ services:
       COOKIE_SECURE: ${COOKIE_SECURE:-1}
       DATA_DIR: /data
       FUENTE_PATH: /data/fuentes-excel/grupos.json
+      # Acceso al panel interno. ADMIN_PASSWORD es obligatoria: sin ella el despliegue falla en vez de generar una clave que nadie conoce.
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Define ADMIN_PASSWORD en las variables de entorno}
+      # Firma de sesiones (se recomienda definirla; si se omite se genera y guarda en el volumen).
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      # Detrás de HTTPS (Dokploy/Traefik) la cookie de sesión debe ser Secure. Pon 0 solo si sirves por HTTP.
+      COOKIE_SECURE: ${COOKIE_SECURE:-1}
       SIGAE_API_URL: ${SIGAE_API_URL:-https://api.postgradounap.edu.pe/}
       SIGAE_CONVOCATORIA: ${SIGAE_CONVOCATORIA:-adc6bcb2-4935-48f0-9ed8-c55454aad806}
       INTRANET_URL: ${INTRANET_URL:-}
