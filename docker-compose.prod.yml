@@ -16,11 +16,6 @@ services:
       PORT: "4351"
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-api:4351}
       WEB_ORIGIN: ${WEB_ORIGIN:?Define WEB_ORIGIN con el dominio publico, p. ej. https://epgsoporte.online}
-      # Acceso al panel y sesiones (el codigo en produccion los usa).
-      ADMIN_USER: ${ADMIN_USER:-}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
-      SESSION_SECRET: ${SESSION_SECRET:-}
-      COOKIE_SECURE: ${COOKIE_SECURE:-1}
       DATA_DIR: /data
       FUENTE_PATH: /data/fuentes-excel/grupos.json
       # Acceso al panel interno. ADMIN_PASSWORD es obligatoria: sin ella el despliegue falla en vez de generar una clave que nadie conoce.
